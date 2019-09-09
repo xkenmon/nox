@@ -10,6 +10,7 @@ import io.netty.channel.ServerChannel;
 import io.netty.channel.epoll.Epoll;
 import io.netty.channel.epoll.EpollEventLoopGroup;
 import io.netty.channel.epoll.EpollServerSocketChannel;
+import io.netty.channel.kqueue.KQueue;
 import io.netty.channel.kqueue.KQueueEventLoopGroup;
 import io.netty.channel.kqueue.KQueueServerSocketChannel;
 import io.netty.channel.nio.NioEventLoopGroup;
@@ -30,26 +31,21 @@ public class NoxServerBootstrap {
     Class<? extends ServerChannel> channelClass;
     EventLoopGroup bossGroup;
     EventLoopGroup workerGroup;
-    EventLoopGroup forwardGroup;
-    var os = System.getProperty("os.name").toLowerCase();
-    if (os.contains("linux") && Epoll.isAvailable()) {
+    if (Epoll.isAvailable()) {
       log.info("use epoll socket channel.");
       channelClass = EpollServerSocketChannel.class;
       bossGroup = new EpollEventLoopGroup(2);
       workerGroup = new EpollEventLoopGroup();
-      forwardGroup = new EpollEventLoopGroup();
-    } else if (os.contains("mac")) {
+    } else if (KQueue.isAvailable()) {
       log.info("use kqueue socket channel.");
       channelClass = KQueueServerSocketChannel.class;
       bossGroup = new KQueueEventLoopGroup(2);
       workerGroup = new KQueueEventLoopGroup();
-      forwardGroup = new KQueueEventLoopGroup();
     } else {
       log.info("use nio socket channel.");
       channelClass = NioServerSocketChannel.class;
       bossGroup = new NioEventLoopGroup(2);
       workerGroup = new NioEventLoopGroup();
-      forwardGroup = new NioEventLoopGroup();
     }
     try {
       ServerBootstrap serverBootstrap = new ServerBootstrap();
@@ -85,7 +81,6 @@ public class NoxServerBootstrap {
     } catch (InterruptedException e) {
       log.error("catch interrupted exception: ", e);
     } finally {
-      forwardGroup.shutdownGracefully();
       workerGroup.shutdownGracefully();
       bossGroup.shutdownGracefully();
     }

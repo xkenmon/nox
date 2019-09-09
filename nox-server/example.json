@@ -1,0 +1,16 @@
+{
+  "listen_address": "0.0.0.0",
+  "port_password": [
+    {
+      "port": 12345,
+      "password": "you-password"
+    },
+    {
+      "port": 54321,
+      "password": "other-password"
+    }
+  ],
+  "method": "aes-256-cfb",
+  "fast-open": true,
+  "timeout": 300
+}

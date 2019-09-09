@@ -9,7 +9,9 @@ import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
+import io.netty.channel.epoll.Epoll;
 import io.netty.channel.epoll.EpollSocketChannel;
+import io.netty.channel.kqueue.KQueue;
 import io.netty.channel.kqueue.KQueueSocketChannel;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioSocketChannel;
@@ -21,10 +23,9 @@ public class SSocksAddrRequestHandler extends SimpleChannelInboundHandler<SSocks
   private static final Class<? extends SocketChannel> channelClass;
 
   static {
-    var os = System.getProperty("os.name").toLowerCase();
-    if (os.contains("linux")) {
+    if (Epoll.isAvailable()) {
       channelClass = EpollSocketChannel.class;
-    } else if (os.contains("mac")) {
+    } else if (KQueue.isAvailable()) {
       channelClass = KQueueSocketChannel.class;
     } else {
       channelClass = NioSocketChannel.class;
