@@ -21,6 +21,9 @@ public class ServerConfiguration {
   @JSONField(name = "timeout")
   private Integer timeoutInSecond = 600;
 
+  @JSONField(name = "fast_open")
+  private Integer fastOpen = -1;
+
   @JSONField(name = "debug")
   private Integer debug = 1;
 

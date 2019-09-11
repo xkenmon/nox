@@ -11,6 +11,6 @@
     }
   ],
   "method": "aes-256-cfb",
-  "fast-open": true,
+  "fast-open": 100,
   "timeout": 300
 }

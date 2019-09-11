@@ -1,5 +1,6 @@
 package com.xkenmon.nox.client.initializer;
 
+import com.xkenmon.nox.client.configuration.ClientConfiguration;
 import com.xkenmon.nox.client.handler.Socks5CommandRequestHandler;
 import com.xkenmon.nox.client.handler.Socks5InitialRequestHandler;
 import io.netty.channel.ChannelInitializer;
@@ -17,11 +18,9 @@ public class Socks5ChannelInitializer extends ChannelInitializer<SocketChannel> 
 
   private Socks5CommandRequestHandler commandRequestHandler;
 
-  public Socks5ChannelInitializer(String password, String method, String remoteAddress,
-      Integer remotePort) {
+  public Socks5ChannelInitializer(ClientConfiguration configuration) {
     initialRequestHandler = new Socks5InitialRequestHandler();
-    commandRequestHandler = new Socks5CommandRequestHandler(
-        remoteAddress, remotePort, password, method);
+    commandRequestHandler = new Socks5CommandRequestHandler(configuration);
   }
 
 

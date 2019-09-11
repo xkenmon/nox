@@ -31,6 +31,9 @@ public class ClientConfiguration {
   private String method;
 
   @NonNull
+  private Boolean fastOpen;
+
+  @NonNull
   private Integer timeout;
 
 }

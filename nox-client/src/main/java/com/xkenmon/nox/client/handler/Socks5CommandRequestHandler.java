@@ -1,5 +1,6 @@
 package com.xkenmon.nox.client.handler;
 
+import com.xkenmon.nox.client.configuration.ClientConfiguration;
 import com.xkenmon.nox.client.initializer.SSocksClientChannelInitializer;
 import com.xkenmon.nox.ssocks.handler.ForwardingHandler;
 import io.netty.bootstrap.Bootstrap;
@@ -9,6 +10,7 @@ import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelOption;
 import io.netty.channel.SimpleChannelInboundHandler;
 import io.netty.channel.epoll.Epoll;
+import io.netty.channel.epoll.EpollChannelOption;
 import io.netty.channel.epoll.EpollSocketChannel;
 import io.netty.channel.kqueue.KQueue;
 import io.netty.channel.kqueue.KQueueSocketChannel;
@@ -27,20 +29,10 @@ import lombok.extern.slf4j.Slf4j;
 public class Socks5CommandRequestHandler extends
     SimpleChannelInboundHandler<DefaultSocks5CommandRequest> {
 
-  private String serverAddress;
+  private ClientConfiguration configuration;
 
-  private Integer serverPort;
-
-  private String password;
-
-  private String method;
-
-  public Socks5CommandRequestHandler(String serverAddress, Integer serverPort,
-      String password, String method) {
-    this.serverAddress = serverAddress;
-    this.serverPort = serverPort;
-    this.password = password;
-    this.method = method;
+  public Socks5CommandRequestHandler(ClientConfiguration configuration) {
+    this.configuration = configuration;
   }
 
   private static final Class<? extends SocketChannel> channelClass;
@@ -63,8 +55,15 @@ public class Socks5CommandRequestHandler extends
           .channel(channelClass)
           .option(ChannelOption.TCP_NODELAY, true)
           .option(ChannelOption.SO_KEEPALIVE, true)
-          .handler(new SSocksClientChannelInitializer(ctx, msg, password, method));
-      var forwardConnection = client.connect(serverAddress, serverPort);
+          .option(ChannelOption.CONNECT_TIMEOUT_MILLIS, configuration.getTimeout() * 1000)
+          .handler(new SSocksClientChannelInitializer(ctx, msg,
+              configuration.getPassword(),
+              configuration.getMethod()));
+      if (Epoll.isAvailable() && configuration.getFastOpen()) {
+        client.option(EpollChannelOption.TCP_FASTOPEN_CONNECT, true);
+      }
+      var forwardConnection = client
+          .connect(configuration.getRemoteAddr(), configuration.getRemotePort());
       forwardConnection.addListener((ChannelFutureListener) future -> {
         if (future.isSuccess()) {
           log.debug("write success response to client.");

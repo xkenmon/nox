@@ -1,5 +1,7 @@
 package com.xkenmon.nox.server.handler;
 
+import com.xkenmon.nox.common.util.ExceptionUtil;
+import com.xkenmon.nox.server.event.PendingDoneEvent;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
@@ -24,18 +26,26 @@ public class PendingHandler extends ChannelInboundHandlerAdapter {
   }
 
   @Override
-  public void handlerRemoved(ChannelHandlerContext ctx) throws Exception {
-    if (!clientConnectFuture.isDone()) {
-      throw new IllegalStateException("should be removed after the connection is complete");
+  public void userEventTriggered(ChannelHandlerContext ctx, Object evt) throws Exception {
+    if (evt instanceof PendingDoneEvent) {
+      log.debug("receive pending done event.");
+      if (clientConnectFuture.isSuccess()) {
+        writeQueue.forEach(clientConnectFuture.channel()::write);
+        clientConnectFuture.channel().flush();
+        log.debug("flush pending data");
+      } else if (clientConnectFuture.cause() != null) {
+        log.warn("connect failure, not flush data.");
+      }
+      log.debug("remove pending handler.");
+      ctx.pipeline().remove(this);
     }
-    if (clientConnectFuture.isSuccess()) {
-      writeQueue.forEach(clientConnectFuture.channel()::write);
-      clientConnectFuture.channel().flush();
-      log.debug("flush peding data");
-    } else {
-      log.debug("connect failure, not flush data.");
-      log.debug("removed pending handler.");
-    }
-    super.handlerRemoved(ctx);
+  }
+
+  @Override
+  public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
+    log.warn("pending handler has thrown an exception: {}", cause.getMessage());
+    log.debug(ExceptionUtil.stackTraceToString(cause));
+    ctx.flush();
+    ctx.close();
   }
 }

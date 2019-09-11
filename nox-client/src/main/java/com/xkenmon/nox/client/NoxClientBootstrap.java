@@ -53,9 +53,11 @@ public class NoxClientBootstrap {
           .option(ChannelOption.SO_BACKLOG, 128)
           .option(ChannelOption.CONNECT_TIMEOUT_MILLIS, configuration.getTimeout() * 1000)
           .childHandler(
-              new Socks5ChannelInitializer(configuration.getPassword(), configuration.getMethod(),
-                  configuration.getRemoteAddr(),
-                  configuration.getRemotePort()));
+              new Socks5ChannelInitializer(configuration));
+
+      if (Epoll.isAvailable() && configuration.getFastOpen()) {
+        log.info("client TCP fast open enabled.");
+      }
 
       ChannelFuture bindFuture = serverBootstrap
           .bind(configuration.getLocalAddr(), configuration.getLocalPort()).sync();

@@ -7,7 +7,6 @@ import com.xkenmon.nox.ssocks.crypto.CryptoFactory;
 import com.xkenmon.nox.ssocks.crypto.Decryptor;
 import com.xkenmon.nox.ssocks.crypto.Encryptor;
 import com.xkenmon.nox.ssocks.handler.ForwardingHandler;
-import com.xkenmon.nox.ssocks.util.SSocksKeyGenerator;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInitializer;
 import io.netty.channel.socket.SocketChannel;
@@ -25,8 +24,6 @@ public class SSocksClientChannelInitializer extends ChannelInitializer<SocketCha
   private final Socks5CommandRequest commandRequest;
 
   private ChannelHandlerContext forwardingContext;
-
-  private byte[] key = SSocksKeyGenerator.of("mengxiangkun", 256 / 8);
 
   private String password;
 

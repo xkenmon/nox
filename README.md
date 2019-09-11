@@ -10,6 +10,7 @@ Nox is a high performance shadowsocks implementation based on netty network fram
     - MacOS: kqueue
     - Windows and other: netty default nio
 - Server side supports multiple users.
+- TCP fastopen support.
 - Only support TCP. (version 0.0.1-SNAPSHOT)
 
 ### Supported encryption methods
@@ -100,9 +101,13 @@ Usage: <main class> [options]
     }
   ],
   "method": "aes-256-cfb",
+  "fast_open": 100, 
   "timeout": 300
 }
 ```
+
+> fast_open: The option value specifies the PendingFastOpenRequests threshold,
+> i.e., the maximum length of pending SYNs with data payload.
 
 ### Client
 
@@ -129,6 +134,9 @@ Usage: <main class> [options]
       server port
   * -s, --server
       server address
+    --fast-open
+      enable client TFO feature
+      Default: false
     -t, --timeout
       timeout in second
       Default: 300
