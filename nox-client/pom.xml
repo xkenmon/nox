@@ -8,7 +8,7 @@
   <parent>
     <groupId>com.xkenmon.nox</groupId>
     <artifactId>nox</artifactId>
-    <version>0.0.1-SNAPSHOT</version>
+    <version>0.0.2</version>
   </parent>
 
   <packaging>jar</packaging>
