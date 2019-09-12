@@ -8,8 +8,10 @@ import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelOption;
 import io.netty.channel.EventLoopGroup;
 import io.netty.channel.ServerChannel;
+import io.netty.channel.epoll.Epoll;
 import io.netty.channel.epoll.EpollEventLoopGroup;
 import io.netty.channel.epoll.EpollServerSocketChannel;
+import io.netty.channel.kqueue.KQueue;
 import io.netty.channel.kqueue.KQueueEventLoopGroup;
 import io.netty.channel.kqueue.KQueueServerSocketChannel;
 import io.netty.channel.nio.NioEventLoopGroup;
@@ -28,13 +30,12 @@ public class NoxClientBootstrap {
   public void start() {
     Class<? extends ServerChannel> channelClass;
     EventLoopGroup bossGroup, workerGroup;
-    var os = System.getProperty("os.name").toLowerCase();
-    if (os.contains("linux")) {
+    if (Epoll.isAvailable()) {
       log.info("use epoll socket channel.");
       channelClass = EpollServerSocketChannel.class;
       bossGroup = new EpollEventLoopGroup(2);
       workerGroup = new EpollEventLoopGroup();
-    } else if (os.contains("mac")) {
+    } else if (KQueue.isAvailable()) {
       log.info("use kqueue socket channel.");
       channelClass = KQueueServerSocketChannel.class;
       bossGroup = new KQueueEventLoopGroup(2);
@@ -52,9 +53,11 @@ public class NoxClientBootstrap {
           .option(ChannelOption.SO_BACKLOG, 128)
           .option(ChannelOption.CONNECT_TIMEOUT_MILLIS, configuration.getTimeout() * 1000)
           .childHandler(
-              new Socks5ChannelInitializer(configuration.getPassword(), configuration.getMethod(),
-                  configuration.getRemoteAddr(),
-                  configuration.getRemotePort()));
+              new Socks5ChannelInitializer(configuration));
+
+      if (Epoll.isAvailable() && configuration.getFastOpen()) {
+        log.info("client TCP fast open enabled.");
+      }
 
       ChannelFuture bindFuture = serverBootstrap
           .bind(configuration.getLocalAddr(), configuration.getLocalPort()).sync();

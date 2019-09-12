@@ -33,6 +33,7 @@ public class ClientApp extends BaseApp<CommandArgs> {
         .remoteAddr(args.getRemoteAddress())
         .remotePort(args.getRemotePort())
         .timeout(args.getTimeout())
+        .fastOpen(args.getFastOpen())
         .build();
   }
 
@@ -60,6 +61,9 @@ public class ClientApp extends BaseApp<CommandArgs> {
 
     @Parameter(names = {"-t", "--timeout"}, description = "timeout in second")
     private Integer timeout = 5 * 60;
+
+    @Parameter(names = {"--fast-open"}, description = "enable client TFO feature")
+    private Boolean fastOpen = false;
 
     @Parameter(names = {
         "--debug"}, description = "debug log level. [0: debug, 1: info, 2: warn, 3: error]")

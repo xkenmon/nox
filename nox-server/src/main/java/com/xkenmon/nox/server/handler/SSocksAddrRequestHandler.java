@@ -1,6 +1,7 @@
 package com.xkenmon.nox.server.handler;
 
 import com.xkenmon.nox.common.util.ExceptionUtil;
+import com.xkenmon.nox.server.event.PendingDoneEvent;
 import com.xkenmon.nox.server.initializer.ClientChannelInitializer;
 import com.xkenmon.nox.ssocks.codec.SSocksAddressDecoder;
 import com.xkenmon.nox.ssocks.handler.ForwardingHandler;
@@ -9,7 +10,9 @@ import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
+import io.netty.channel.epoll.Epoll;
 import io.netty.channel.epoll.EpollSocketChannel;
+import io.netty.channel.kqueue.KQueue;
 import io.netty.channel.kqueue.KQueueSocketChannel;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioSocketChannel;
@@ -18,13 +21,14 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class SSocksAddrRequestHandler extends SimpleChannelInboundHandler<SSocksAddressRequest> {
 
+  private static final PendingDoneEvent PENDING_DONE_EVT = new PendingDoneEvent();
+
   private static final Class<? extends SocketChannel> channelClass;
 
   static {
-    var os = System.getProperty("os.name").toLowerCase();
-    if (os.contains("linux")) {
+    if (Epoll.isAvailable()) {
       channelClass = EpollSocketChannel.class;
-    } else if (os.contains("mac")) {
+    } else if (KQueue.isAvailable()) {
       channelClass = KQueueSocketChannel.class;
     } else {
       channelClass = NioSocketChannel.class;
@@ -47,7 +51,6 @@ public class SSocksAddrRequestHandler extends SimpleChannelInboundHandler<SSocks
 
     var connectFuture = client.connect(msg.getDestAddr(), msg.getPort());
 
-    // pending data before connect success
     ctx.pipeline().addLast("pending-handler", new PendingHandler(connectFuture));
 
     connectFuture.addListener(future -> {
@@ -55,11 +58,11 @@ public class SSocksAddrRequestHandler extends SimpleChannelInboundHandler<SSocks
         log.info("connected to {}", connectFuture.channel().remoteAddress());
         ctx.channel().pipeline()
             .addLast("server-forwarder", new ForwardingHandler(connectFuture.channel()));
-        ctx.pipeline().remove("pending-handler");
+        ctx.fireUserEventTriggered(PENDING_DONE_EVT);
         ctx.pipeline().remove(SSocksAddressDecoder.class);
         ctx.pipeline().remove(this);
       } else {
-        log.warn("can not connecte to {}:{}", msg.getDestAddr(), msg.getPort());
+        log.warn("can not connect to {}:{}", msg.getDestAddr(), msg.getPort());
         log.warn(future.cause().getMessage());
         log.debug(ExceptionUtil.stackTraceToString(future.cause()));
         ctx.channel().close()
@@ -70,7 +73,7 @@ public class SSocksAddrRequestHandler extends SimpleChannelInboundHandler<SSocks
   }
 
   @Override
-  public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
+  public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) {
     log.warn(cause.getMessage());
     log.debug(ExceptionUtil.stackTraceToString(cause));
     ctx.close();

@@ -102,7 +102,7 @@ public class ServerApp extends BaseApp<CommandArgs> {
     @Parameter(names = {"-k", "--password"}, description = "password")
     private String password;
 
-    @Parameter(names = {"-m", "--method"}, description = "encrytion method")
+    @Parameter(names = {"-m", "--method"}, description = "encryption method")
     private String method;
 
     @Parameter(names = {"-t", "--timeout"}, description = "timeout in second")
